@@ -7,6 +7,7 @@ my $file =shift;
 my $test = `df -lh`;
 
 system("mkdir -p $direction");
+sleep(20);
 open OUT,">$direction/$file" || die $!;
 print OUT "$test";
 close OUT;
