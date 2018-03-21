@@ -16,6 +16,7 @@ import re
 import pandas as pd
 # import numpy as np
 import matplotlib
+import configparser
 
 matplotlib.use('Agg')
 # import matplotlib.pyplot as plt
@@ -42,6 +43,13 @@ def getArgs():
     args = parser.parse_args()
     return args
 
+def getConfig(config):
+    cf = configparser.RawConfigParser()
+    cf.read(config)
+    return cf
+
+
+
 
 def Popen(cmd):
     '''
@@ -53,15 +61,15 @@ def Popen(cmd):
     return p
 
 
-def randomFileName(cache):
+def randomFileName():
     '''
     生成随机20位长度的文件名，例如：KG9skf8s9fd0s0dfg.tmp
     :param cache: 所有生成的文件名都需要记录，最终进行统计及删除
     :return:文件名
     '''
     rf = '{}.tmp'.format(''.join(random.sample(string.ascii_letters + string.digits, 20)))
-    cache[rf] = 1
-    return rf, cache
+
+    return rf
 
 
 def getpids(pid):
