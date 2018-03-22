@@ -9,56 +9,43 @@
 # @Software: PyCharm
 
 from __future__ import absolute_import, unicode_literals
-import subprocess
-import sys, os
-from chardet import detect
+import os
+import sys,os
+sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+# print(sys.path)
+
+from monitor.utils import plotResult,Popen,memory_stat,writefile
 
 
-def mkdirs(file):
+def runshell(script,prefix,tmp):
     '''
-    方法中任意一个文件（生成），都会检查目录是否存在，不论是否存在都建立目录
-    :param file:任意文件
-    :return:True
+    运行脚本流程
+    :param script:
+    :param prefix:
+    :return:标准输入输出的文件大小
     '''
-    try:
-        filepath = os.path.dirname(os.path.abspath(file))
-        print(file)
-        print(filepath)
-        os.makedirs(filepath,mode=0o755,exist_ok=True)
-        return True
-    except Exception as err:
-        raise('目录建立错误：mkdirs(file)')
+    cache={}
+    p = Popen(script)
+    pid = p.pid
+    osuffix='.o.{pid}'.format(pid=pid)
+    esuffix='.e.{pid}'.format(pid=pid)
+    file,stdout,stderr,cache=memory_stat(p,pid,cache,tmp)
+    plotResult(file,prefix)
+    osize,ounit=writefile(stdout,'{prefix}{osuffix}'.format(prefix=prefix,osuffix=osuffix))
+    esize,eunit=writefile(stderr, '{prefix}{esuffix}'.format(prefix=prefix, esuffix=esuffix))
+    # rmcache(cache)
+    return '{}{}'.format(osize,ounit),'{}{}'.format(esize,eunit)
 
 
-
-
-def Popen(cmd):
-    '''
-    只负责运行命令
-    :param cmd:需要运行的命令
-    :return:subprocess.Popen结果
-    '''
-    p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    return p
-
-def mntcmd(sPopen):
-    '''
-    监控subprocess.Popen运行
-    :param sPopen:subprocess.Popen实例
-    :return:标准输出，标准错误
-    '''
-    stdout, stderr = sPopen.communicate()
-    codetype = detect(stdout)['encoding']
-    return stdout.decode(codetype), stderr.decode(codetype)
 
 def main():
     '''
     测试流程
     '''
-    cmd = 'dir'
-    print(Popen(cmd))
-    # print(mkdirs(''))
-    pass
+    cmd = 'sh /tmp/monitor.sh'
+    tmp = '/tmp'
+    prefix='/tmp/monitor'
+    run(cmd,prefix,tmp)
 
 
 if __name__ == '__main__':
