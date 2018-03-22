@@ -26,26 +26,30 @@ def mkdirs(file):
         print(filepath)
         os.makedirs(filepath,mode=0o755,exist_ok=True)
         return True
-    except:
+    except Exception as err:
         raise('目录建立错误：mkdirs(file)')
 
 
 
 
-def Popen(cmd,prefix):
+def Popen(cmd):
     '''
-
+    只负责运行命令
     :param cmd:需要运行的命令
-    :param
-    :return:标准输出，标准错误
+    :return:subprocess.Popen结果
     '''
     p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    print(p.pid)
-    stdout, stderr = p.communicate()
+    return p
+
+def mntcmd(sPopen):
+    '''
+    监控subprocess.Popen运行
+    :param sPopen:subprocess.Popen实例
+    :return:标准输出，标准错误
+    '''
+    stdout, stderr = sPopen.communicate()
     codetype = detect(stdout)['encoding']
     return stdout.decode(codetype), stderr.decode(codetype)
-
-
 
 def main():
     '''
