@@ -7,19 +7,20 @@
 # @Software: PyCharm
 
 import time
-# import os, sys
+
 import subprocess
 import argparse
 import random
 import string
 import re
 import pandas as pd
-# import numpy as np
+
 import matplotlib
 import configparser
+import os,sys
 
 matplotlib.use('Agg')
-# import matplotlib.pyplot as plt
+from chardet import detect
 import seaborn as sns
 
 
@@ -43,33 +44,72 @@ def getArgs():
     args = parser.parse_args()
     return args
 
+
 def getConfig(config):
     cf = configparser.RawConfigParser()
     cf.read(config)
     return cf
 
+def getFileSize(file):
+    '''
+    计算文件大小，具体用处暂时未定
+    :param file: 文件名
+    :return: 文件大小（数字），单位（b,Kb,Mb,Gb,Tb）
+    '''
+    fsize = os.path.getsize(file)
+    unit = ['b', 'Kb', 'Mb', 'Gb', 'Tb']
+    unitN = 0
+    while fsize >= 1024 and unitN < 4:
+        unitN += 1
+        fsize /=1024
+    return round(fsize, 2), unit[unitN]
 
+def writefile(context, file):
+    '''
+    写入文件
+    :param context:写入内容
+    :param file: 写入文件的文件名
+    :return:文件大小，单位
+    '''
+    mkdirs(file)
+    with open(file, 'a+') as fbuffer:
+        fbuffer.write(context)
+    fsize,unit = getFileSize(file)
+    return fsize,unit
+
+def mkdirs(file):
+    '''
+    方法中任意一个文件（生成），都会检查目录是否存在，不论是否存在都建立目录
+    :param file:任意文件
+    :return:True
+    '''
+    try:
+        filepath = os.path.dirname(os.path.abspath(file))
+        os.makedirs(filepath, mode=0o755, exist_ok=True)
+        return True
+    except Exception as err:
+        raise ('目录建立错误：mkdirs(file)')
 
 
 def Popen(cmd):
     '''
-    subprocess包装
-    :param cmd: 需要运行的命令
-    :return: popen
+    只负责运行命令
+    :param cmd:需要运行的命令
+    :return:subprocess.Popen结果
     '''
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     return p
 
 
-def randomFileName():
+def randomFileName(cache):
     '''
     生成随机20位长度的文件名，例如：KG9skf8s9fd0s0dfg.tmp
     :param cache: 所有生成的文件名都需要记录，最终进行统计及删除
     :return:文件名
     '''
     rf = '{}.tmp'.format(''.join(random.sample(string.ascii_letters + string.digits, 20)))
-
-    return rf
+    cache[rf] = 1
+    return rf, cache
 
 
 def getpids(pid):
@@ -80,9 +120,8 @@ def getpids(pid):
     :return: pidlist 父进程及父进程所有子进程 pid
     '''
     p = Popen(getchildPidCmd(pid))
-    stdout, _ = p.communicate()
-    pidstr = stdout.decode('utf-8')
-    pidlist = pattern4pid(pidstr)
+    stdout, _ = mntcmd(p)
+    pidlist = pattern4pid(stdout)
     return pidlist
 
 
@@ -93,6 +132,7 @@ def pattern4pid(pidstr):
     :return: pidlist
     '''
     pattern = re.compile('\(([\d]+)\)')
+    # print(pidstr)
     pidlist = pattern.findall(pidstr)
     return pidlist
 
@@ -105,6 +145,12 @@ def getchildPidCmd(pid):
     '''
     cmd = 'pstree -p {}'.format(pid)
     return cmd
+
+
+def rmcache(cache):
+    cmd = 'rm {}'.format(' '.join(cache.keys()))
+    # print(cmd)
+    return mntcmd(Popen(cmd))
 
 
 def getstatCmd(pid):
@@ -136,65 +182,66 @@ def plotResult(file, outdir):
                             hue='Command', size=10)
     sns_plot.savefig("{}.Time_VSZ_RSS.pdf".format(outdir), dpi=300)
     p = Popen('rm {}'.format(file))
-    _, _ = p.communicate()
+    mntcmd(p)
 
 
-
-def pipeline(pid, outdir, tmp, log):
+def mntcmd(sPopen):
     '''
-    流程
-    :param shs:脚本
-    :param outdir: 输出路径
-    :param tmp: tmp路径
-    :param log: 暂时未使用
-    :return: 无
+    监控subprocess.Popen运行
+    :param sPopen:subprocess.Popen实例
+    :return:标准输出，标准错误
     '''
-    cache = {}
-    # cmd = 'sh {}'.format(shs)
-    # fp = Popen(cmd)
-    fatherPid = pid
-    file = pidstat(fatherPid, cache, tmp)
-    plotResult(file, outdir)
-    # _, _ = fp.communicate()
-    print('Finish!!!')
+    stdout, stderr = sPopen.communicate()
+    # print(type(stdout),stdout)
+    # print(type(stderr),stderr)
+    codetype = 'utf8'
+    if stdout != None and detect(stdout)['encoding'] != None:
+    # if detect(stdout)['encoding'] != None:
+        codetype = detect(stdout)['encoding']
+        # print(codetype)
+        stdout = stdout.decode(codetype)
+    else:
+        stdout = stdout.decode()
+    if stderr != None and detect(stderr)['encoding'] != None:
+    # if detect(stderr)['encoding'] != None:
+        codetype = detect(stderr)['encoding']
+        # print(codetype)
+        stderr = stderr.decode(codetype)
+    else:
+        stderr = stderr.decode()
+
+    return stdout, stderr
 
 
-def pidstat(pid, cache, tmp='/tmp/'):
+def memory_stat(popen, pid, cache, tmp='/tmp/'):
     '''
     pidstat进行进程统计，并将结果输出到tmp目录中
     :param pid: pid
     :param cache: 文件名dict
     :param tmp: tmp目录
-    :return: file
+    :return: file,主程序标准输出，主程序标准错误，cache
     '''
     rf, cache = randomFileName(cache)
-    # cmd = getstatCmd(pid)
     file = '{}/{}'.format(tmp, rf)
-
     pidlist = getpids(pid)
-
+    rstdout, rstderr = 0, 0
     while (len(pidlist) > 0):
         for cpid in pidlist:
             cmd = getstatCmd(cpid)
             p = Popen(cmd)
-            stdout, _ = p.communicate()
+            stdout, _ = mntcmd(p)
             with open(file, 'a+') as f:
-                f.write('#stdout:{}'.format(stdout.decode('utf-8')))
-
+                f.write('#stdout:{}'.format(stdout))
+        if popen.poll() != None:
+            rstdout, rstderr = mntcmd(popen)
+        else:
+            time.sleep(10)
         pidlist = getpids(pid)
-        time.sleep(10)  # 统计时间一般10秒一次
-        # p = Popen(cmd)
-        # stdout, stderr = p.communicate()
-        # print('stdout:{}'.format(stdout.decode('utf-8')))
-    return file
+    return file, rstdout, rstderr, cache
 
 
 def main():
-    # getArgs()
-    cache = {}
-    # print(randomFileName(cache))
-    pidstat(29709, cache, '/home/chenyl/TMPS/')
-    # getpids(27742)
+    pass
 
 
 if __name__ == '__main__':
