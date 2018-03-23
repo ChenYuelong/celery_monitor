@@ -23,22 +23,40 @@ from chardet import detect
 import seaborn as sns
 
 
-def getArgs():
+def gtwArgs():
     '''
-    命令行参数获得，目前版本只针对shell脚本，并对shell脚本中的每一行命令进行统计
+    go-to-work脚本提交
     :return: args
     '''
-    parser = argparse.ArgumentParser(prog='ppmonitor',
-                                     description='shell脚本监控程序，监控shell脚本中每一行命令所用内存及cpu统计')
-    parser.add_argument('-pid', '--pid', dest='mainPid', type=str, required=True, action='store',
-                        help='需要监控的进程号，程序会监控该进程号及其子进程')
-    parser.add_argument('-o', '--out', dest='out', type=str, required=True, action='store',
-                        help='输出目录prefix')
+    parser = argparse.ArgumentParser(prog='go to work',
+                                     description=
+                                     '''
+                                     基于celery的分布式脚本提交命令，功能尽量模仿SGE\n
+                                     目前为测试版本：0.0.0    \n                                
+                                     慢慢增加功能\n                                    
+                                     --“完成比完美更重要”---     \n                              
+                                     '''
+                                     )
+    parser.add_argument('-s', '--script', dest='script', type=str, required=True, action='store',
+                        help=
+                        '''
+                        需要执行的脚本，shell脚本（required）
+                        ''')
+    parser.add_argument('-p', '--prefix', dest='prefix', type=str, required=True, action='store',
+                        help=
+                        '''
+                        输出文件的prefix，例如 ~/tmp 输出则会是 ~/tmp.xxx
+                        输出主要指log文件及性能统计文件（required）
+                        ''')
     parser.add_argument('-t', '--tmp', dest='tmp', type=str, action='store',
-                        help='tmp目录，e.g. /tmp/', default='/tmp/')
-    parser.add_argument('-log', '--log', dest='log', type=str, action='store',
-                        help='log，e.g. test.sh.log', default='')
+                        help=
+                        '''
+                        tmp目录，e.g. /tmp/(option)
+                        ''', default='/tmp/')
     args = parser.parse_args()
+    if not os.path.exists(args.script):
+        raise FileNotFoundError('脚本必须存在，最好检查一下是否为绝对路径')
+
     return args
 
 
