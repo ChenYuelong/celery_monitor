@@ -45,15 +45,11 @@ def createBacken(config):
 
 def createApp(config):
     backend = createBacken(config)
-    # backend='db+mysql://fangkc:kchi@bintest@localhost/celery_test'
-    # print(backen)
-
     broker = 'pyamqp://guest@localhost//'
-    # backen = 'pyamqp://guest@localhost//'
     app=Celery('monitor',
                broker=broker,
                backend=backend,
-               include=['monitorTasks.apptasks'])
+               include=['monitor.monitorTasks.apptasks'])
     return app
 
 app = createApp('/home/PROJECTS/celery_monitor/configure.ini')
