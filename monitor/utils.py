@@ -73,7 +73,7 @@ def writefile(context, file):
     '''
     mkdirs(file)
     with open(file, 'a+') as fbuffer:
-        fbuffer.write(context)
+        fbuffer.write(str(context))
     fsize,unit = getFileSize(file)
     return fsize,unit
 
@@ -170,19 +170,22 @@ def plotResult(file, outdir):
     :param outdir: 统计结果输出目录
     :return: 无
     '''
+
     data = pd.read_table(file, sep='\s+', skip_blank_lines=True, comment='#')
-    data.columns = ['Time', 'UID', 'PID', 'pusr', 'psystem', 'pguest', 'pCPU', 'CPU', 'minflt/s',
-                    'majflt/s', 'VSZ', 'RSS', '%MEM', 'kB_rd/s', 'kB_wr/s', 'kB_ccwr/s', 'Command']
-    data['Time'] = data['Time'] - min(data['Time'])
-    data['VSZ'] = data['VSZ'] / 1000000
-    data['RSS'] = data['RSS'] / 1000000
-    data.groupby('Command').describe().to_csv('{}.summary.csv'.format(outdir))
-    # print(data)
-    sns_plot = sns.pairplot(data, x_vars=["RSS", "VSZ"], y_vars=['Time'],
-                            hue='Command', size=10)
-    sns_plot.savefig("{}.Time_VSZ_RSS.pdf".format(outdir), dpi=300)
-    p = Popen('rm {}'.format(file))
-    mntcmd(p)
+    # print(data.size)
+    if  data.size>=2:
+        data.columns = ['Time', 'UID', 'PID', 'pusr', 'psystem', 'pguest', 'pCPU', 'CPU', 'minflt/s',
+                        'majflt/s', 'VSZ', 'RSS', '%MEM', 'kB_rd/s', 'kB_wr/s', 'kB_ccwr/s', 'Command']
+        data['Time'] = data['Time'] - min(data['Time'])
+        data['VSZ'] = data['VSZ'] / 1000000
+        data['RSS'] = data['RSS'] / 1000000
+        data.groupby('Command').describe().to_csv('{}.summary.csv'.format(outdir))
+        # print(data)
+        sns_plot = sns.pairplot(data, x_vars=["RSS", "VSZ"], y_vars=['Time'],
+                                hue='Command', size=10)
+        sns_plot.savefig("{}.Time_VSZ_RSS.pdf".format(outdir), dpi=300)
+        p = Popen('rm {}'.format(file))
+        mntcmd(p)
 
 
 def mntcmd(sPopen):
