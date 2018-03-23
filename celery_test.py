@@ -9,7 +9,7 @@
 # @Software: PyCharm
 
 from __future__ import absolute_import, unicode_literals
-from appTasks.apptasks import generateFileDirs
+from monitor.monitorTasks.apptasks import generateFileDirs
 
 def main():
     '''
