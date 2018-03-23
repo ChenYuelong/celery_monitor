@@ -9,5 +9,5 @@ setup(
     author='yuelong.chen',
     author_email='yuelong.chen@oumeng.com.cn',
     description='celery_monitor',
-    scripts=['bin/gtw.py'],
+    scripts=['monitor/bin/gtw.py'],
 )
