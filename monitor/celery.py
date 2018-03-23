@@ -53,7 +53,7 @@ def createApp(config):
     app=Celery('monitor',
                broker=broker,
                backend=backend,
-               include=['appTasks.apptasks'])
+               include=['monitorTasks.apptasks'])
     return app
 
 app = createApp('/home/PROJECTS/celery_monitor/configure.ini')
