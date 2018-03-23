@@ -9,12 +9,10 @@
 # @Software: PyCharm
 
 from __future__ import absolute_import, unicode_literals
-import sys,os
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from monitor.celery import app
 import subprocess
-from monitor.utils import randomFileName
-from monitor.runshell import runshell
+from monitor.utils.utils import randomFileName
+from monitor.utils.runshell import runshell
 
 
 

@@ -9,12 +9,8 @@
 # @Software: PyCharm
 
 from __future__ import absolute_import, unicode_literals
-import os
 import sys,os
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-# print(sys.path)
-
-from monitor.utils import plotResult,Popen,memory_stat,writefile
+from monitor.utils.utils import plotResult,Popen,memory_stat,writefile
 
 
 def runshell(script,prefix,tmp):
@@ -42,10 +38,7 @@ def main():
     '''
     测试流程
     '''
-    cmd = 'sh /tmp/monitor.sh'
-    tmp = '/tmp'
-    prefix='/tmp/monitor'
-    run(cmd,prefix,tmp)
+    pass
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@
 # @Time    : 2018/3/21 13:13
 # @Author  : Chen Yuelong
 # @Mail    : yuelong.chen@oumeng.com.cn
-# @File    : celery.py
+# @File    : celery_app.py
 # @Software: PyCharm
 
 from __future__ import absolute_import,unicode_literals
@@ -13,7 +13,7 @@ from celery import Celery
 import pymysql
 pymysql.install_as_MySQLdb()
 
-from monitor.utils import getConfig
+from monitor.utils.utils import getConfig
 
 
 

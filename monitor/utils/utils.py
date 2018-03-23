@@ -6,18 +6,17 @@
 # @File    : utils.py
 # @Software: PyCharm
 
+from __future__ import absolute_import, unicode_literals
 import time
-
 import subprocess
 import argparse
 import random
 import string
 import re
 import pandas as pd
-
 import matplotlib
 import configparser
-import os,sys
+import os
 
 matplotlib.use('Agg')
 from chardet import detect
@@ -31,8 +30,6 @@ def getArgs():
     '''
     parser = argparse.ArgumentParser(prog='ppmonitor',
                                      description='shell脚本监控程序，监控shell脚本中每一行命令所用内存及cpu统计')
-    # parser.add_argument('-sh', '--shell', dest='shellScript', type=str, required=True, action='store',
-    #                     help='shell脚本，e.g. test.sh')
     parser.add_argument('-pid', '--pid', dest='mainPid', type=str, required=True, action='store',
                         help='需要监控的进程号，程序会监控该进程号及其子进程')
     parser.add_argument('-o', '--out', dest='out', type=str, required=True, action='store',
@@ -50,6 +47,7 @@ def getConfig(config):
     cf.read(config)
     return cf
 
+
 def getFileSize(file):
     '''
     计算文件大小，具体用处暂时未定
@@ -61,8 +59,9 @@ def getFileSize(file):
     unitN = 0
     while fsize >= 1024 and unitN < 4:
         unitN += 1
-        fsize /=1024
+        fsize /= 1024
     return round(fsize, 2), unit[unitN]
+
 
 def writefile(context, file):
     '''
@@ -74,8 +73,9 @@ def writefile(context, file):
     mkdirs(file)
     with open(file, 'a+') as fbuffer:
         fbuffer.write(str(context))
-    fsize,unit = getFileSize(file)
-    return fsize,unit
+    fsize, unit = getFileSize(file)
+    return fsize, unit
+
 
 def mkdirs(file):
     '''
@@ -173,7 +173,7 @@ def plotResult(file, outdir):
 
     data = pd.read_table(file, sep='\s+', skip_blank_lines=True, comment='#')
     # print(data.size)
-    if  data.size>=2:
+    if data.size >= 2:
         data.columns = ['Time', 'UID', 'PID', 'pusr', 'psystem', 'pguest', 'pCPU', 'CPU', 'minflt/s',
                         'majflt/s', 'VSZ', 'RSS', '%MEM', 'kB_rd/s', 'kB_wr/s', 'kB_ccwr/s', 'Command']
         data['Time'] = data['Time'] - min(data['Time'])
@@ -199,16 +199,14 @@ def mntcmd(sPopen):
     # print(type(stderr),stderr)
     codetype = 'utf8'
     if stdout != None and detect(stdout)['encoding'] != None:
-    # if detect(stdout)['encoding'] != None:
+
         codetype = detect(stdout)['encoding']
-        # print(codetype)
+
         stdout = stdout.decode(codetype)
     else:
         stdout = stdout.decode()
     if stderr != None and detect(stderr)['encoding'] != None:
-    # if detect(stderr)['encoding'] != None:
         codetype = detect(stderr)['encoding']
-        # print(codetype)
         stderr = stderr.decode(codetype)
     else:
         stderr = stderr.decode()
